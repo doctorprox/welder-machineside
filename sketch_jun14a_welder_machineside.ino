@@ -138,6 +138,12 @@ void setup() {
   timerAlarmEnable(timer);  
   Serial.begin(115200);
   Serial.println("Starting Arduino BLE Client application...");
+
+
+  pinMode(27, OUTPUT);
+  ledcSetup(0, 100, 16);
+  ledcAttachPin(26, 0);
+
   BLEDevice::init("");
   
   // Retrieve a Scanner and set the callback we want to use to be informed when we
@@ -150,54 +156,24 @@ void setup() {
   pBLEScan->setActiveScan(true);
   pBLEScan->start(5, false);
   
-  xTaskCreate(
-	  servo,          /* Task function. */
-	  "Check for faults",        /* String with name of task. */
-	  1000,            /* Stack size in bytes. */
-	  NULL,             /* Parameter passed as input of the task */
-	  5,                /* Priority of the task. */
-	  NULL);            /* Task handle. */
-
-
-  xTaskCreate(
-	  servotimer,          /* Task function. */
-	  "Check for faults",        /* String with name of task. */
-	  1000,            /* Stack size in bytes. */
-	  NULL,             /* Parameter passed as input of the task */
-	  3,                /* Priority of the task. */
-	  NULL);            /* Task handle. */
 
 } // End of setup.
 
 
-void servo(void * parameter) {
-	while (true)
-	{
-		digitalWrite(26, 1);
-		delayMicroseconds(settime);
-		digitalWrite(26, 0);
-		vTaskDelay(6);
-	}
-}
 
-void servotimer(void * parameter) {
-	while (true)
-	{
-		if (settime = 2000) {
-			settime = 1000;
-		}
-		else {
-			settime = 2000;
-		}
-		vTaskDelay(5000);
+void set_servo(int32_t time) {
+	if (time > 20000) {
+		time = 20000;
 	}
+	if (time < 4000) {
+		time = 4000;
+	}
+	ledcWrite(0, time);
 }
-
 
 // This is the Arduino main loop function.
 void loop() {
 
-	pinMode(26, OUTPUT);
 
 
   timerWrite(timer, 0); //reset timer (feed watchdog)
@@ -221,6 +197,8 @@ void loop() {
     uint32_t value1 = pRemoteCharacteristic->readUInt32();
     Serial.print("The characteristic value was: ");
     Serial.println(value1);
+	set_servo(value1);
+	
     //std::string value = pRemoteCharacteristic->readValue();
 
     //String newValue = "Time since boot: " + String(millis() / 1000);
